@@ -5,6 +5,16 @@ from app.command_line import run_command
 
 
 class AndroidBuilder(Builder):
+    # KINGVPN_ANDROID_LANE=github builds a local signed universal APK for
+    # GitHub releases (no Play Store service account needed). Default
+    # "deploy" keeps the Play Store internal-track upload flow.
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        lane = os.environ.get("KINGVPN_ANDROID_LANE", "deploy")
+        if lane not in ("deploy", "github"):
+            raise ValueError(f"Unsupported Android lane: {lane}")
+        self.fastlane = lane
+
     def before_build(self):
         super().before_build()
         self.build_core()

@@ -10,7 +10,18 @@ platform :android do
     )
     download_universal_apk_from_google_play(
         version_code: ##version_code##,
-        destination: "../../output/OneXray-android-universal.apk",
+        destination: "../../output/KingVPN-android-universal.apk",
+    )
+  end
+
+  # Local GitHub release lane (no Play Store account needed):
+  # builds a signed universal APK from the same upload keystore.
+  lane :github do
+    sh("flutter build apk --release --target-platform android-arm64,android-x64")
+    FileUtils.mkdir_p("../../output")
+    FileUtils.cp(
+      "../build/app/outputs/flutter-apk/app-release.apk",
+      "../../output/KingVPN-android-universal.apk",
     )
   end
 end

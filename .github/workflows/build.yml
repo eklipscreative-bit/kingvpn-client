@@ -452,6 +452,10 @@ jobs:
         run: sudo gem install fastlane --no-document
 
       - name: Build & upload
+        # Without a Play service account, build a local signed universal APK
+        # for GitHub releases instead of the Play internal-track upload.
+        env:
+          KINGVPN_ANDROID_LANE: ${{ secrets.ANDROID_PLAY_SERVICE_JSON_BASE64 == '' && 'github' || 'deploy' }}
         run: uv run --project build_scripts python build_scripts/main.py KingVPN android
 
       - name: Upload artifact
