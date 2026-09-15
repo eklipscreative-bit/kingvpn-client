@@ -1,0 +1,352 @@
+import 'dart:convert';
+import 'dart:typed_data';
+
+import 'package:material_ui/material_ui.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:kingvpn/pages/shared/widgets/app_activity.dart';
+import 'package:kingvpn/core/tools/file.dart';
+import 'package:kingvpn/l10n/localizations/app_localizations.dart';
+import 'package:kingvpn/pages/shared/alert.dart';
+import 'package:kingvpn/pages/shared/page_cubit.dart';
+import 'package:kingvpn/pages/shared/share/action.dart';
+import 'package:kingvpn/pages/shared/widgets/button_progress.dart';
+import 'package:kingvpn/pages/theme/font.dart';
+import 'package:kingvpn/service/servers/import.dart';
+import 'package:kingvpn/service/shared/failure.dart';
+import 'package:kingvpn/service/advanced/xray/geodata/model.dart';
+import 'package:kingvpn/service/shared/share/configuration_transfer.dart';
+import 'package:kingvpn/service/shared/share/outgoing_share.dart';
+import 'package:shadcn_ui/shadcn_ui.dart';
+
+enum ConfigurationTransferAction { file, clipboard, export }
+
+class ConfigurationTransferState {
+  final bool busy;
+  final ConfigurationTransferAction? action;
+  final String? notice;
+  final List<GeoDataInput> assets;
+
+  const ConfigurationTransferState({
+    this.busy = false,
+    this.action,
+    this.notice,
+    this.assets = const [],
+  });
+
+  ConfigurationTransferState copyWith({
+    bool? busy,
+    ConfigurationTransferAction? action,
+    bool clearAction = false,
+    String? notice,
+    bool clearNotice = false,
+    List<GeoDataInput>? assets,
+  }) => ConfigurationTransferState(
+    busy: busy ?? this.busy,
+    action: clearAction ? null : action ?? this.action,
+    notice: clearNotice ? null : notice ?? this.notice,
+    assets: assets ?? this.assets,
+  );
+}
+
+class ConfigurationTransferController
+    extends PageCubit<ConfigurationTransferState> {
+  final ConfigurationKind kind;
+  final String Function() readText;
+  final String Function() readName;
+  final bool Function()? hasContent;
+  final void Function(ConfigurationImportDraft) onImport;
+  final ConfigurationTransferService service;
+  ConfigurationImportDraft? _draft;
+
+  ConfigurationTransferController({
+    required this.kind,
+    required this.readText,
+    required this.readName,
+    required this.onImport,
+    this.hasContent,
+    ConfigurationTransferService? service,
+  }) : service = service ?? ConfigurationTransferService(),
+       super(const ConfigurationTransferState());
+
+  bool get busy => state.busy;
+  ConfigurationTransferAction? get action => state.action;
+  String? get notice => state.notice;
+  ConfigurationImportDraft? get imported => _draft;
+  List<GeoDataInput> get assets => state.assets;
+
+  Future<void> import(BuildContext context, {required bool clipboard}) async {
+    if (busy) return;
+    final l10n = AppLocalizations.of(context)!;
+    emit(
+      state.copyWith(
+        busy: true,
+        action: clipboard
+            ? ConfigurationTransferAction.clipboard
+            : ConfigurationTransferAction.file,
+        clearNotice: true,
+      ),
+    );
+    ConfigurationImportDraft? next;
+    try {
+      final input = clipboard
+          ? await ServerImportService.readClipboard()
+          : await ServerImportService.pickTextFile(jsonOnly: true);
+      if (input == null || !context.mounted || !isPageActive) return;
+      // Parse before asking to replace anything, and download only after consent.
+      ConfigurationTransferService.read(input, kind);
+      if ((hasContent?.call() ?? readText().trim().isNotEmpty) &&
+          !await ContextAlert.showConfirmDialog(
+            context,
+            title: kind == ConfigurationKind.raw
+                ? l10n.prototypeReplaceEditorJson
+                : l10n.prototypeReplaceCustomRoute,
+            confirmLabel: clipboard
+                ? l10n.prototypeReadClipboard
+                : l10n.prototypeImportFile,
+          )) {
+        return;
+      }
+      if (!context.mounted || !isPageActive) return;
+      next = await service.import(input, kind);
+      if (!context.mounted || !isPageActive) return;
+      onImport(next);
+      final previous = _draft;
+      _draft = next;
+      next = null;
+      await previous?.dispose();
+      emit(
+        state.copyWith(
+          notice: kind == ConfigurationKind.raw
+              ? l10n.prototypeJsonImportedIntoEditor
+              : l10n.prototypeCustomImportedIntoEditor,
+          assets: _draft?.content.assets ?? const [],
+        ),
+      );
+    } catch (error) {
+      emit(
+        state.copyWith(
+          notice: appFailureMessage(
+            l10n,
+            error,
+            operation: l10n.buttonAddFailed,
+          ),
+        ),
+      );
+    } finally {
+      await next?.dispose();
+      if (!isPageActive) await _disposeDraft();
+      emit(
+        state.copyWith(
+          busy: false,
+          clearAction: true,
+          assets: _draft?.content.assets ?? const [],
+        ),
+      );
+    }
+  }
+
+  Future<ShareText> prepareShareText() async {
+    final name = readName();
+    final text = readText();
+    final dependencies = List<GeoDataInput>.of(assets);
+    final links = await service.shareLinks(
+      kind: kind,
+      name: name,
+      text: text,
+      assets: dependencies,
+    );
+    return ShareText(title: name, text: links);
+  }
+
+  Future<void> exportJson(BuildContext context) async {
+    if (busy) return;
+    final l10n = AppLocalizations.of(context)!;
+    emit(
+      state.copyWith(
+        busy: true,
+        action: ConfigurationTransferAction.export,
+        clearNotice: true,
+      ),
+    );
+    try {
+      if (!await ContextAlert.showConfirmDialog(
+            context,
+            title: l10n.prototypeExportJson,
+            content: kind == ConfigurationKind.raw
+                ? l10n.prototypeRawJsonShareWarning
+                : l10n.prototypeCustomShareWarning,
+            confirmLabel: l10n.prototypeExportJson,
+          ) ||
+          !context.mounted ||
+          !isPageActive) {
+        return;
+      }
+      final name = readName();
+      final text = readText();
+      final json = await service.exportJson(
+        kind: kind,
+        name: name,
+        text: text,
+        assets: assets,
+      );
+      if (!isPageActive || !context.mounted) return;
+      final basename = name.trim().replaceAll(
+        RegExp(r'[\\/:*?"<>|\x00-\x1f]'),
+        '_',
+      );
+      if (await FileTool.saveData(
+        Uint8List.fromList(utf8.encode(json)),
+        '${basename.isEmpty ? 'xray' : basename}.json',
+        'json',
+      )) {
+        emit(
+          state.copyWith(
+            notice: kind == ConfigurationKind.raw
+                ? l10n.prototypeOriginalJsonExported
+                : l10n.prototypeCustomJsonExported,
+          ),
+        );
+      }
+    } catch (error) {
+      emit(
+        state.copyWith(
+          notice: appFailureMessage(
+            l10n,
+            error,
+            operation: l10n.actionResult(
+              l10n.prototypeExportJson,
+              l10n.resultFailed,
+            ),
+          ),
+        ),
+      );
+    } finally {
+      if (!isPageActive) await _disposeDraft();
+      emit(state.copyWith(busy: false, clearAction: true));
+    }
+  }
+
+  Future<void> _disposeDraft() async {
+    final draft = _draft;
+    _draft = null;
+    await draft?.dispose();
+  }
+
+  @override
+  Future<void> disposePageResources() async {
+    if (!state.busy) await _disposeDraft();
+  }
+}
+
+class ConfigurationTransferTools extends StatelessWidget {
+  final ConfigurationTransferController controller;
+  final bool disabled;
+  final List<Widget> children;
+  final OutgoingShare? outgoingShare;
+  const ConfigurationTransferTools({
+    super.key,
+    required this.controller,
+    this.disabled = false,
+    this.children = const [],
+    this.outgoingShare,
+  });
+
+  @override
+  Widget build(BuildContext context) =>
+      BlocBuilder<ConfigurationTransferController, ConfigurationTransferState>(
+        bloc: controller,
+        builder: (context, state) {
+          final l10n = AppLocalizations.of(context)!;
+          final busy = disabled || state.busy;
+          final empty = controller.readText().trim().isEmpty;
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              OutlinedButtonTheme(
+                data: OutlinedButtonThemeData(
+                  style: Theme.of(context).outlinedButtonTheme.style?.copyWith(
+                    minimumSize: const WidgetStatePropertyAll(Size(0, 36)),
+                    padding: const WidgetStatePropertyAll(
+                      EdgeInsets.symmetric(horizontal: 10),
+                    ),
+                    textStyle: WidgetStatePropertyAll(
+                      AppTypography.configurationTool,
+                    ),
+                  ),
+                ),
+                child: Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    OutlinedButton.icon(
+                      onPressed: busy
+                          ? null
+                          : () => controller.import(context, clipboard: false),
+                      icon: AppActivityBuilder(
+                        builder: (context, activity) =>
+                            activity.downloading ||
+                                state.action == ConfigurationTransferAction.file
+                            ? const ButtonProgressIndicator()
+                            : const Icon(LucideIcons.upload, size: 16),
+                      ),
+                      label: Text(l10n.prototypeImportFile),
+                    ),
+                    OutlinedButton.icon(
+                      onPressed: busy
+                          ? null
+                          : () => controller.import(context, clipboard: true),
+                      icon: AppActivityBuilder(
+                        builder: (context, activity) =>
+                            activity.downloading ||
+                                state.action ==
+                                    ConfigurationTransferAction.clipboard
+                            ? const ButtonProgressIndicator()
+                            : const Icon(LucideIcons.clipboard, size: 16),
+                      ),
+                      label: Text(l10n.prototypeReadClipboard),
+                    ),
+                    OutlinedButton.icon(
+                      onPressed: busy || empty
+                          ? null
+                          : () => controller.exportJson(context),
+                      icon: state.action == ConfigurationTransferAction.export
+                          ? const ButtonProgressIndicator()
+                          : const Icon(LucideIcons.download, size: 16),
+                      label: Text(l10n.prototypeExportJson),
+                    ),
+                    ShareAction(
+                      enabled: !busy && !empty,
+                      prepare: controller.prepareShareText,
+                      warning: controller.kind == ConfigurationKind.raw
+                          ? l10n.prototypeRawJsonShareWarning
+                          : l10n.prototypeCustomShareWarning,
+                      copiedMessage: l10n.prototypeConfigurationLinksCopied,
+                      outgoing: outgoingShare,
+                      builder: (_, action) => OutlinedButton.icon(
+                        onPressed: action.onPressed,
+                        icon: action.busy
+                            ? const ButtonProgressIndicator()
+                            : Icon(action.icon, size: 16),
+                        label: Text(action.label),
+                      ),
+                    ),
+                    ...children,
+                  ],
+                ),
+              ),
+              if (state.notice != null)
+                Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: Semantics(
+                    liveRegion: true,
+                    child: Text(
+                      state.notice!,
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  ),
+                ),
+            ],
+          );
+        },
+      );
+}

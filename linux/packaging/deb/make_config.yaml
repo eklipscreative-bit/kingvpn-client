@@ -1,0 +1,30 @@
+display_name: KingVPN Client
+package_name: kingvpn-client
+maintainer:
+  name: KingVPN
+  email: contato@sub.conectsoft.shop
+priority: optional
+section: net
+# Fallback for direct Fastforge use. The App build script replaces this with
+# the release bundle's actual size before creating the DEB.
+installed_size: 130000
+dependencies:
+  - procps
+  - libcap2-bin
+  - libayatana-appindicator3-1
+essential: false
+icon: assets/logo.png
+postinstall_scripts:
+  - setcap cap_net_admin,cap_net_raw+eip /opt/kingvpn-client/OneXrayCore
+keywords:
+  - KingVPN Client
+  - Xray
+  - VPN
+  - Proxy
+generic_name: VPN and Proxy Client
+categories:
+  - Network
+startup_notify: true
+startup_wm_class: KingVPNClient
+supported_mime_type:
+  - x-scheme-handler/kingvpn
