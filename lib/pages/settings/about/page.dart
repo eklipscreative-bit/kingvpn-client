@@ -63,7 +63,10 @@ class AboutKingVpnPage extends StatelessWidget {
                             ),
                           ),
                           const SizedBox(height: 9),
-                          Text('KingVPN Client', style: AppTypography.aboutBrandTitle),
+                          Text(
+                            'KingVPN Client',
+                            style: AppTypography.aboutBrandTitle,
+                          ),
                           const SizedBox(height: 9),
                           Text(
                             l10n.prototypeCrossPlatformXrayClient,

@@ -144,9 +144,12 @@ class SettingsPage extends StatelessWidget {
                           (mobile
                                   ? AppTypography.settingsHint
                                   : AppTypography.desktopSettingsHint)
-                              .copyWith(color: ColorManager.secondaryText(context)),
+                              .copyWith(
+                                color: ColorManager.secondaryText(context),
+                              ),
                       showChevron: true,
-                      onTap: () => controller.openLink(context, SettingsLink.plan),
+                      onTap: () =>
+                          controller.openLink(context, SettingsLink.plan),
                     ),
                   ],
                 );

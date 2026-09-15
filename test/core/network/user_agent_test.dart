@@ -1,4 +1,4 @@
-﻿import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_test/flutter_test.dart';
 import 'package:kingvpn/core/network/user_agent.dart';
 
 void main() {
@@ -13,7 +13,7 @@ void main() {
       final result = await DownloadUserAgent.resolveForPlatform(
         mode: DownloadUserAgentMode.system,
         platform: platform,
-kingvpnUserAgent: fallback,
+        kingvpnUserAgent: fallback,
         systemUserAgentReader: () async => '  system browser UA  ',
       );
 
@@ -125,4 +125,3 @@ kingvpnUserAgent: fallback,
     );
   });
 }
-
