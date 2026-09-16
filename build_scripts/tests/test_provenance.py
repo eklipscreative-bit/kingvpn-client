@@ -22,14 +22,14 @@ class ProvenanceTest(unittest.TestCase):
         self.metadata.mkdir()
         for name, value in {
             "sha": "a" * 40, "libxray-sha": "b" * 40, "vcore-sha": "c" * 40,
-            "run-id": "123", "run-attempt": "1", "repository": "KingVPN/OneXray",
+            "run-id": "123", "run-attempt": "1", "repository": "coracowork/kingvpn-client",
             "target": "windows",
         }.items():
             (self.metadata / f"{name}.txt").write_text(value)
         self.run = {
             "path": ".github/workflows/build.yml", "conclusion": "success",
             "id": 123, "run_attempt": 1, "head_sha": "a" * 40,
-            "repository": {"full_name": "KingVPN/OneXray"},
+            "repository": {"full_name": "coracowork/kingvpn-client"},
         }
 
     def receipt(self, architecture, *, target="windows", paths=None, mode="msix"):
@@ -41,7 +41,7 @@ class ProvenanceTest(unittest.TestCase):
             package.write_bytes(package.name.encode())
         receipt = {
             "formatVersion": 1, "target": target, "architecture": architecture,
-            "runId": "123", "runAttempt": "1", "repository": "KingVPN/OneXray",
+            "runId": "123", "runAttempt": "1", "repository": "coracowork/kingvpn-client",
             "sources": {"app": "a" * 40, "libXray": "b" * 40, "VCore": "c" * 40},
             "sourceDirty": {"app": False, "libXray": False, "VCore": False},
             "tools": {"python": {"version": "fixture"}},
@@ -59,9 +59,6 @@ class ProvenanceTest(unittest.TestCase):
         (self.metadata / "target.txt").write_text(build_target)
         manifests, packages = [], []
         for target, architecture, paths in (
-            ("ios", "arm64", ["ios/KingVPN-ios.ipa"]),
-            ("macos_se", "arm64", ["macos_se/KingVPN-macos-universal.zip"]),
-            ("android", "x86_64", ["android-universal/KingVPN-android-universal.apk"]),
             ("linux", "x86_64", ["linux-x64/KingVPN-linux-x86_64.zip",
                                  "linux-x64/KingVPN-linux-x86_64.deb"]),
             ("linux", "aarch64", ["linux-arm64/KingVPN-linux-aarch64.zip",
@@ -79,7 +76,7 @@ class ProvenanceTest(unittest.TestCase):
         return manifests, packages
 
     def test_single_platform_builds_publish_only_their_complete_package_set(self):
-        for target in ("ios", "macos", "android", "linux", "windows"):
+        for target in ("linux", "windows"):
             manifests, packages = self.public_receipts(target)
             try:
                 with self.subTest(target=target):
@@ -94,7 +91,7 @@ class ProvenanceTest(unittest.TestCase):
 
     def test_all_build_requires_every_public_package_and_target_receipt(self):
         manifests, packages = self.public_receipts("all")
-        self.assertEqual(len(packages), 11)
+        self.assertEqual(len(packages), 8)
         self.assertEqual(verify_release(self.artifacts, self.run), packages)
         for path in manifests + packages:
             original = path.read_bytes()
@@ -120,7 +117,8 @@ class ProvenanceTest(unittest.TestCase):
         data = json.loads(manifests[0].read_text())
         misplaced = {packages[1].name: data["packages"].pop(packages[1].name)}
         manifests[0].write_text(json.dumps(data))
-        other, _ = self.receipt("arm64", target="ios", paths=["ios/KingVPN-ios.ipa"])
+        other, _ = self.receipt("x64", target="windows", mode="msix",
+                                    paths=["windows-store-x64/KingVPN-windows-amd64.msix"])
         data = json.loads(other.read_text())
         data["packages"].update(misplaced)
         other.write_text(json.dumps(data))
@@ -129,16 +127,9 @@ class ProvenanceTest(unittest.TestCase):
 
     def test_github_release_excludes_store_outputs(self):
         manifests, packages = self.public_receipts("all")
-        # Build uploads the MAS receipt but not its already-published PKG.
-        _, (pkg,) = self.receipt("arm64", target="macos", paths=["macos/OneXray.pkg"])
-        pkg.unlink()
-        # The Android receipt also records the AAB, which is not downloaded.
-        android = next(path for path in manifests if "android" in path.name)
-        data = json.loads(android.read_text())
-        data["packages"]["app-release.aab"] = "e" * 64
-        android.write_text(json.dumps(data))
-        self.receipt("x64")
-        self.receipt("arm64")
+        # MSIX receipts ship in the same run, but only EXE/ZIP/DEB go to GitHub.
+        for arch in ("x64", "arm64"):
+            self.receipt(arch, target="windows", mode="msix")
         self.assertEqual(verify_release(self.artifacts, self.run), packages)
 
     def test_windows_modes_have_separate_receipts_and_channels(self):
@@ -175,7 +166,7 @@ class ProvenanceTest(unittest.TestCase):
             verify_release(self.artifacts, self.run, windows_only=True)
 
     def test_cli_emits_only_verified_files_and_nothing_on_failure(self):
-        _, packages = self.public_receipts("ios")
+        _, packages = self.public_receipts("windows")
         run_json = self.artifacts / "build-run.json"
         run_json.write_text(json.dumps(self.run))
         command = [sys.executable, str(Path(__file__).resolve().parents[1] / "verify_release.py"),

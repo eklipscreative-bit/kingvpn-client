@@ -14,10 +14,8 @@ from app.command_line import dart_command, fastforge_command, flutter_command, g
 _SHA = re.compile(r"[0-9a-f]{40}")
 _PACKAGE_SUFFIXES = {".ipa", ".pkg", ".zip", ".deb", ".msix", ".exe", ".apk", ".aab"}
 # Public packages produced by Build, excluding App Store / Play Store outputs.
+# Apple/Android entries return when their signing credentials are available.
 _GITHUB_RELEASE_PACKAGES = {
-    ("ios", None, None): ("ios/KingVPN-ios.ipa",),
-    ("macos_se", None, None): ("macos_se/KingVPN-macos-universal.zip",),
-    ("android", None, None): ("android-universal/KingVPN-android-universal.apk",),
     ("linux", "x86_64", None): (
         "linux-x64/KingVPN-linux-x86_64.zip",
         "linux-x64/KingVPN-linux-x86_64.deb",
