@@ -15,7 +15,7 @@ dependencies:
 essential: false
 icon: assets/logo.png
 postinstall_scripts:
-  - setcap cap_net_admin,cap_net_raw+eip /opt/kingvpn-client/OneXrayCore
+  - setcap cap_net_admin,cap_net_raw+eip /opt/KingVPNClient/OneXrayCore
 keywords:
   - KingVPN Client
   - Xray

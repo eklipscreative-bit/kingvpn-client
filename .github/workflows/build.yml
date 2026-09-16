@@ -414,7 +414,7 @@ jobs:
           test "$pkg" = "kingvpn-client"
           contents_file="$RUNNER_TEMP/kingvpn-deb-contents.txt"
           dpkg-deb --contents "$deb_file" > "$contents_file"
-          grep -q '/opt/kingvpn-client/OneXrayCore$' "$contents_file"
+          grep -q '/opt/KingVPNClient/OneXrayCore$' "$contents_file"
           dpkg-deb --info "$deb_file"
           lintian "$deb_file" || {
             lintian_status=$?
