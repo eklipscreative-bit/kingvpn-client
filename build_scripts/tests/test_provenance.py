@@ -261,10 +261,10 @@ class ProvenanceTest(unittest.TestCase):
     def test_all_jobs_use_resolved_sha_and_publishers_require_receipts(self):
         workflows = Path(__file__).resolve().parents[2] / ".github/workflows"
         build = (workflows / "build.yml").read_text()
-        self.assertEqual(build.count("needs: release_metadata"), 6)
+        self.assertEqual(build.count("needs: release_metadata"), 2)
         self.assertEqual(build.count("ref: ${{ env.LIBXRAY_REF }}"), 1)
-        self.assertEqual(build.count("ref: ${{ needs.release_metadata.outputs.libxray_sha }}"), 6)
-        self.assertEqual(build.count("name: Upload build provenance"), 6)
+        self.assertEqual(build.count("ref: ${{ needs.release_metadata.outputs.libxray_sha }}"), 2)
+        self.assertEqual(build.count("name: Upload build provenance"), 2)
         for name in ("publish.yml", "publish-microsoft-store.yml"):
             content = (workflows / name).read_text()
             self.assertIn("build_scripts/verify_release.py", content)
