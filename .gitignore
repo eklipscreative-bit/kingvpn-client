@@ -98,3 +98,6 @@ macos_se/fastlane/AuthKey.p8
 # ai
 .cursor/
 .ai/
+
+# Local Play Console downloads (public certs, not part of the build)
+android/cert/
