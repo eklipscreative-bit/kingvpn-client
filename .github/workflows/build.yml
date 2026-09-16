@@ -1,9 +1,9 @@
 #
-# Builds KingVPN Client across all supported platforms.
+# Builds KingVPN Client (Linux + Windows for now; Apple/Android
+# jobs return when their signing credentials are available).
 #
 # Trigger:
 #   - workflow_dispatch: manually builds all or one operating system
-#     (`macos` builds both the MAS and Developer ID variants)
 #   - push to a tag matching `v*`: builds release artifacts
 #
 # Required repository secrets (set under Settings → Secrets and variables → Actions):
