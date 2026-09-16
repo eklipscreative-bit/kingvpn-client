@@ -128,7 +128,7 @@ void main() {
       const ValueKey('primary-desktop-navigation'),
     );
     expect(find.text('connect-content'), findsOneWidget);
-    expect(find.text('OneXray'), findsOneWidget);
+    expect(find.text('KingVPN Client'), findsOneWidget);
     expect(
       tester.getSize(desktopNavigation).width,
       AppLayout.desktopSidebarWidth,
@@ -152,7 +152,7 @@ void main() {
         tester.getSize(desktopNavigation).width,
         AppLayout.compactSidebarWidth,
       );
-      expect(find.text('OneXray'), findsOneWidget);
+      expect(find.text('KingVPN Client'), findsOneWidget);
       expect(tester.takeException(), isNull);
     }
     await tester.binding.setSurfaceSize(const Size(720, 800));

@@ -8,11 +8,11 @@ import 'package:kingvpn/core/pigeon/messages.g.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   const queryChannel = BasicMessageChannel<Object?>(
-    'dev.flutter.pigeon.onexray.BridgeHostApi.queryPlatformPermission',
+    'dev.flutter.pigeon.kingvpn.BridgeHostApi.queryPlatformPermission',
     BridgeHostApi.pigeonChannelCodec,
   );
   const requestChannel = BasicMessageChannel<Object?>(
-    'dev.flutter.pigeon.onexray.BridgeHostApi.requestPlatformPermission',
+    'dev.flutter.pigeon.kingvpn.BridgeHostApi.requestPlatformPermission',
     BridgeHostApi.pigeonChannelCodec,
   );
   const permissions = MethodChannel('flutter.baseflow.com/permissions/methods');
@@ -29,7 +29,7 @@ void main() {
 
   test('Android startup queries include the API 37 local network grant', () {
     final native = File(
-      'android/app/src/main/kotlin/net/yuandev/onexray/pigeon/HostApi.kt',
+      'android/app/src/main/kotlin/com/kingmobile/kingvpncliente/pigeon/HostApi.kt',
     ).readAsStringSync();
     final manifest = File('android/app/src/main/AndroidManifest.xml')
         .readAsStringSync();

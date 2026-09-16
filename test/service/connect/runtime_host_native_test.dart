@@ -10,7 +10,7 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   test('a successful native query must include its status', () async {
     const channel = BasicMessageChannel<Object?>(
-      'dev.flutter.pigeon.onexray.BridgeHostApi.readVpnStatus',
+      'dev.flutter.pigeon.kingvpn.BridgeHostApi.readVpnStatus',
       BridgeHostApi.pigeonChannelCodec,
     );
     final messenger =
@@ -39,7 +39,7 @@ void main() {
     'native status returns permission and state without a callback event',
     () async {
       const channel = BasicMessageChannel<Object?>(
-        'dev.flutter.pigeon.onexray.BridgeHostApi.readVpnStatus',
+        'dev.flutter.pigeon.kingvpn.BridgeHostApi.readVpnStatus',
         BridgeHostApi.pigeonChannelCodec,
       );
       final messenger =

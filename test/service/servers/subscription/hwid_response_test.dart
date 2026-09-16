@@ -146,7 +146,7 @@ void main() {
     'normal responses use saved consent; active alone never opts in',
     () async {
       const channel = BasicMessageChannel<Object?>(
-        'dev.flutter.pigeon.onexray.BridgeHostApi.invoke',
+        'dev.flutter.pigeon.kingvpn.BridgeHostApi.invoke',
         BridgeHostApi.pigeonChannelCodec,
       );
       final messenger =

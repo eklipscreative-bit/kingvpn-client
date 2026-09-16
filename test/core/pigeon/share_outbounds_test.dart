@@ -11,7 +11,7 @@ import 'package:kingvpn/service/shared/share/xray_share_reader.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   const channel = BasicMessageChannel<Object?>(
-    'dev.flutter.pigeon.onexray.BridgeHostApi.invoke',
+    'dev.flutter.pigeon.kingvpn.BridgeHostApi.invoke',
     BridgeHostApi.pigeonChannelCodec,
   );
   final messenger =

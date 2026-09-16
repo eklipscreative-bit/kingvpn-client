@@ -11,7 +11,7 @@ tun:
   mtu: 1500
 
 proxies:
-  - name: onexray-local-socks
+  - name: kingvpn-local-socks
     type: socks5
     server: 127.0.0.1
     port: 1080
@@ -21,7 +21,7 @@ dns:
   enable: false
 
 rules:
-  - MATCH,onexray-local-socks
+  - MATCH,kingvpn-local-socks
 ''');
     expect(
       buildWindowsTun2SocksConfig('1080', enableIPv6: false),

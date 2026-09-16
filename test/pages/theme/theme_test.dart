@@ -90,8 +90,8 @@ void main() {
       expect(shad.popover, palette.popover);
       expect(shad.border, const Color(0xFF2B3543));
       expect(shad.input, const Color(0xFF2B3543));
-      expect(palette.primary, const Color(0xFF69A5FF));
-      expect(palette.primarySolid, const Color(0xFF1F6AF9));
+      expect(palette.primary, const Color(0xFF3BE386));
+      expect(palette.primarySolid, const Color(0xFF0F9D4B));
       expect(palette.foreground, const Color(0xFFF2F5F8));
     });
 

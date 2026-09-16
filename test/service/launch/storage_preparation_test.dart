@@ -67,11 +67,11 @@ void main() {
       legacy.close();
 
       const statusChannel = BasicMessageChannel<Object?>(
-        'dev.flutter.pigeon.onexray.BridgeHostApi.readVpnStatus',
+        'dev.flutter.pigeon.kingvpn.BridgeHostApi.readVpnStatus',
         BridgeHostApi.pigeonChannelCodec,
       );
       const stopChannel = BasicMessageChannel<Object?>(
-        'dev.flutter.pigeon.onexray.BridgeHostApi.stopVpn',
+        'dev.flutter.pigeon.kingvpn.BridgeHostApi.stopVpn',
         BridgeHostApi.pigeonChannelCodec,
       );
       final messenger =

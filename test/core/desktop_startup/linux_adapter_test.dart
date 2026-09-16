@@ -11,7 +11,7 @@ void main() {
 
   setUp(() async {
     temporaryDirectory = await Directory.systemTemp.createTemp(
-      'onexray-linux-autostart-',
+      'kingvpn-linux-autostart-',
     );
     executable = File(
       path.join(temporaryDirectory.path, r'OneXray $100% Test'),
@@ -36,7 +36,7 @@ void main() {
     expect((await adapter.setEnabled(true)).state, LaunchAtLoginState.enabled);
 
     final desktopFile = File(
-      path.join(configHome, 'autostart', 'net.yuandev.onexray.desktop'),
+      path.join(configHome, 'autostart', 'com.kingmobile.kingvpncliente.desktop'),
     );
     final text = await desktopFile.readAsString();
     expect(text, contains('Type=Application'));
@@ -65,7 +65,7 @@ void main() {
           temporaryDirectory.path,
           '.config',
           'autostart',
-          'net.yuandev.onexray.desktop',
+          'com.kingmobile.kingvpncliente.desktop',
         ),
       ).exists(),
       isTrue,
@@ -75,15 +75,15 @@ void main() {
   test('treats a stale owned entry as disabled', () async {
     final configHome = path.join(temporaryDirectory.path, 'config');
     final desktopFile = File(
-      path.join(configHome, 'autostart', 'net.yuandev.onexray.desktop'),
+      path.join(configHome, 'autostart', 'com.kingmobile.kingvpncliente.desktop'),
     );
     await desktopFile.parent.create(recursive: true);
     await desktopFile.writeAsString(
       '[Desktop Entry]\n'
       'Type=Application\n'
-      'Name=OneXray\n'
-      'Exec="/old/OneXray"\n'
-      'TryExec=/old/OneXray\n'
+      'Name=KingVPN Client\n'
+      'Exec="/old/KingVPNClient"\n'
+      'TryExec=/old/KingVPNClient\n'
       'Terminal=false\n',
     );
 
